@@ -19,7 +19,14 @@ socket.on('connect', function() {
 
     socket.emit('entrarChat', usuario, function(resp) {
         // console.log('Usuarios conectados', resp);
-        renderizarUsuarios(resp);
+        if (!params.has('privado')) {
+            console.log(params.has('privado'));
+            renderizarUsuarios(resp);
+        }else{
+
+            renderizarUsuariosPrivados(resp);
+        }
+    
     });
 
 });
@@ -43,19 +50,33 @@ socket.on('disconnect', function() {
 // Escuchar información
 socket.on('crearMensaje', function(mensaje) {
     // console.log('Servidor:', mensaje);
-    renderizarMensajes(mensaje, false);
+    if (!params.has('privado')) {
+        
+        renderizarMensajes(mensaje, false);
+    }else{
+var c = 1;
+        renderizarMensajesPrivados(mensaje, false, c);
+    }
     scrollBottom();
 });
 
 // Escuchar cambios de usuarios
 // cuando un usuario entra o sale del chat
 socket.on('listaPersona', function(personas) {
-    renderizarUsuarios(personas);
+
+    if (!params.has('privado')) {
+        
+        renderizarUsuarios(personas);
+    }else{
+
+        renderizarUsuariosPrivados(personas);
+    }
+    
 });
 
 // Mensajes privados
 socket.on('mensajePrivado', function(mensaje) {
-
+      alerta(mensaje);
     console.log('Mensaje Privado:', mensaje);
 
 });

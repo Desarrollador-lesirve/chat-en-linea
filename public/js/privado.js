@@ -2,21 +2,20 @@ var params = new URLSearchParams(window.location.search);
 
 var nombre = params.get('nombre');
 var sala = params.get('sala');
-
-
+var contador = 0;
+var per;
 // referencias de jQuery
 var divUsuarios = $('#divUsuarios');
 var formEnviar = $('#formEnviar');
 var txtMensaje = $('#txtMensaje');
 var divChatbox = $('#divChatbox');
-var divAlertas = $('#alertas');
-
+var id;
 
 // Funciones para renderizar usuarios
-function renderizarUsuarios(personas) { // [{},{},{}]
+function renderizarUsuariosPrivados(personas) { // [{},{},{}]
 
     console.log(personas);
-
+per = personas;
     var html = '';
 
     html += '<li>';
@@ -26,7 +25,7 @@ function renderizarUsuarios(personas) { // [{},{},{}]
     for (var i = 0; i < personas.length; i++) {
 
         html += '<li>';
-        html += '    <a data-nombre="' + personas[i].nombre + '" data-id="' + personas[i].id + '"  href="javascript:void(0)"><img src="assets/images/users/1.jpg" alt="user-img" class="img-circle"> <span>' + personas[i].nombre + ' <small class="text-success">online</small></span></a>';
+        html += '    <a data-id="' + personas[i].id + '"  href="javascript:void(0)"><img src="assets/images/users/1.jpg" alt="user-img" class="img-circle"> <span>' + personas[i].nombre + ' <small class="text-success">online</small></span></a>';
         html += '</li>';
     }
 
@@ -35,17 +34,18 @@ function renderizarUsuarios(personas) { // [{},{},{}]
 }
 
 
-function renderizarMensajes(mensaje, yo) {
+function renderizarMensajesPrivados(mensaje, yo, c) {
 
     var html = '';
     var fecha = new Date(mensaje.fecha);
     var hora = fecha.getHours() + ':' + fecha.getMinutes();
+    console.log(mensaje);
 
     var adminClass = 'info';
     if (mensaje.nombre === 'Administrador') {
         adminClass = 'danger';
     }
-
+contador = c;
     if (yo) {
         html += '<li class="reverse">';
         html += '    <div class="chat-content">';
@@ -55,8 +55,9 @@ function renderizarMensajes(mensaje, yo) {
         html += '    <div class="chat-img"><img src="assets/images/users/5.jpg" alt="user" /></div>';
         html += '    <div class="chat-time">' + hora + '</div>';
         html += '</li>';
-
+console.log(`este es un mensaje desde lo privado  ${mensaje.mensaje}, cantidad de mesnaje enviado ${contador}`);
     } else {
+        console.log(`este es un mensaje desde lo privado al receptor  ${mensaje.mensaje} cantidad de mesnaje recibidos ${contador}`);
 
         html += '<li class="animated fadeIn">';
 
@@ -70,6 +71,7 @@ function renderizarMensajes(mensaje, yo) {
         html += '    </div>';
         html += '    <div class="chat-time">' + hora + '</div>';
         html += '</li>';
+        
 
     }
 
@@ -96,54 +98,50 @@ function scrollBottom() {
 }
 
 
-function alerta(mensaje) {
-    var html = '';
-    html += '<div class="alert alert-warning alert-dismissible fade show" role="alert">';
-    html +=        `<strong> te ha escrito${mensaje.nombre}</strong> You should check in on some of those fields below.`    ;
-    html += '       <button type="button" class="close" data-dismiss="alert" aria-label="Close">';
-    html += '        <span aria-hidden="true">&times;</span>';
-    html += '      </button>';
-   html += ' </div>';
 
-
-    divAlertas.append(html);
-   // alert("Texto a mostrar");
-
-}
 
 // Listeners
-divUsuarios.on('click', 'a', function () {
+divUsuarios.on('click', 'a', function() {
 
-    var id = $(this).data('id');
-    var use = $(this).data('nombre');
-    var pri;
-
+     id = $(this).data('id');
+    var ruta = `chat.html?nombre=${nombre}&sala=${id}`;
 
     if (id) {
         console.log(id);
         console.log(nombre);
-        pri = true;
-        window.open(`privado.html?nombre=${nombre}&sala=${id}+${use}&privado=${pri}&receptor=${id}`);
+       window.open(ruta);
     }
 
 });
 
-formEnviar.on('submit', function (e) {
+formEnviar.on('submit', function(e) {
 
     e.preventDefault();
 
     if (txtMensaje.val().trim().length === 0) {
         return;
     }
-
+      contador +=1;
+      console.log(per);
     socket.emit('crearMensaje', {
         nombre: nombre,
         mensaje: txtMensaje.val()
-    }, function (mensaje) {
+    }, function(mensaje) {
         txtMensaje.val('').focus();
-        renderizarMensajes(mensaje, true);
+        renderizarMensajesPrivados(mensaje, true, contador);
         scrollBottom();
     });
+
+    if (per.length === 1 ) {
+        socket.emit('mensajePrivado', {
+            nombre: nombre,
+            mensaje: txtMensaje.val(),
+            para: params.get('receptor')
+        }, function(mensaje) {
+            txtMensaje.val('').focus();
+
+        });
+    }
 
 
 });
